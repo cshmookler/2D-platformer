@@ -1,0 +1,13 @@
+﻿  glad.c
+  main.cpp
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\constants.h(14,46): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\main.cpp(198,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\main.cpp(200,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\main.cpp(202,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\main.cpp(204,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\main.cpp(212,45): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 165 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  2D Physics Game.vcxproj -> C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\Release\2D Physics Game.exe
