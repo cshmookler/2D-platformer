@@ -13,4 +13,4 @@ Written in C++ using OpenGL, GLAD, and GLFW. Developed in Visual Studio 2022.
  - Settings file
  - Option to change camera position relative to the virtual world
 ## Possible future features:
- - object rotation
+ - Object rotation
