@@ -118,7 +118,7 @@ namespace physics
 	// return true if a line intersects with another line
 	bool lineIntersectsLine(Point& p1, Point& p2, Point& p3, Point& p4, Point& intersect)
 	{
-		
+		return 0;
 	}
 
 	// return true if a point intersects with a 2D object/barrier defined by two points

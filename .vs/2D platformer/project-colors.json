@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "f7c47bbf-583d-4ccd-928d-d49fe45b01fa": {
+      "ProjectGuid": "f7c47bbf-583d-4ccd-928d-d49fe45b01fa",
+      "DisplayName": "2D platformer",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}
