@@ -72,26 +72,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\external\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\external\lib;$(LibraryPath)</LibraryPath>
     <OutDir>.\bin\Debug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\external\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\external\lib;$(LibraryPath)</LibraryPath>
     <OutDir>.\bin\Release\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\external\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\external\lib;$(LibraryPath)</LibraryPath>
     <OutDir>.\bin\Debug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\include;$(IncludePath)</IncludePath>
-    <LibraryPath>.\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\external\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\external\lib;$(LibraryPath)</LibraryPath>
     <OutDir>.\bin\Release\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -155,7 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\glad.c" />
+    <ClCompile Include="external\include\glad.c" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
