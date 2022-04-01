@@ -1,13 +1,8 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(496,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  main.cpp
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\constants.h(14,46): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\main.cpp(199,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\main.cpp(201,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\main.cpp(203,35): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\main.cpp(205,36): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\src\main.cpp(213,45): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+﻿  main.cpp
+LINK : warning LNK4098: defaultlib 'LIBCMTD' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  Previous IPDB and IOBJ mismatch, fall back to full compilation.
-  All 165 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  1 of 169 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
-  2D Physics Game.vcxproj -> C:\Users\human\Desktop\OpenGL_GLFW_GLAD\projects\2D Physics Game\bin\Release\2D Physics Game.exe
+  2D Physics Game.vcxproj -> C:\Users\human\Desktop\GitHub\2D-platformer\bin\Release\2D Physics Game.exe

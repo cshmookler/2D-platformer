@@ -6,6 +6,8 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #include "constants.h"
 #include "tools.h"
@@ -123,14 +125,29 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-    // Use shader program
+    // use shader program
     glUseProgram(shaderProgram);
+
+    // load fonts
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return -1;
+    }
+
+    FT_Face face;
+    if (FT_New_Face(ft, "C:/Windows/Fonts/Arial.ttf", 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+        return -1;
+    }
     
     // player object
-    physics::Object player(CONST::WINDOW_ASPECT_RATIO,
+    physics::Object player(CONST::WINDOW_ASPECT_RATIO_DEC,
                            CONST::INV_SCALE_FACTOR,
-                           physics::Point((CONST::WINDOW_WIDTH / 2.0f) - 0.5f, 0.0f),
-                           physics::Point((CONST::WINDOW_WIDTH / 2.0f) + 0.5f, 1.0f));
+                           physics::Point((CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) - 0.5f, 0.0f),
+                           physics::Point((CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) + 0.5f, 1.0f));
     // additional variables
     float playerColor[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
     float playerMoved[2] = { 0.0f, 0.0f };
@@ -138,7 +155,7 @@ int main()
     bool canJump = false;
 
     // green box
-    physics::Barrier2D box(CONST::WINDOW_ASPECT_RATIO,
+    physics::Barrier2D box(CONST::WINDOW_ASPECT_RATIO_DEC,
                            CONST::INV_SCALE_FACTOR,
                            physics::Point(0.0f, 0.0f),
                            physics::Point(2.0f, 2.0f));
@@ -153,23 +170,6 @@ int main()
     tools::Stopwatch fpsStopwatch;
     // counter to count the number of frames
     tools::Counter fpsCounter;
-
-    /*
-    * Benchmarks:
-    * 
-    * Default:                  1444 fps
-    * No input handling:        1435 fps (within margin of error)
-    * No player movement:       1432 fps (within margin of error)
-    * No collision detection:   1453 fps (within margin of error)
-    * No player or box render:  1453 fps (within margin of error)
-    * No refilling the window
-    * with a background color,
-    * swapping buffers, or
-    * polling events on each
-    * frame:                    93979 fps (significant fps increase, but these functions are necessary)
-    * Nothing at all:           23087853 fps
-    * 
-    */
 
     // glfw: program loop
     while (!glfwWindowShouldClose(window))
@@ -189,20 +189,20 @@ int main()
         {
             player.velocity.x = 0.0f;
             player.velocity.y = 0.0f;
-            player.p1.x = (CONST::WINDOW_WIDTH / 2.0f) - 0.5f;
+            player.p1.x = (CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) - 0.5f;
             player.p1.y = 0.0f;
-            player.p2.x = (CONST::WINDOW_WIDTH / 2.0f) + 0.5f;
+            player.p2.x = (CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) + 0.5f;
             player.p2.y = 1.0f;
         }
         // player movement
         if (canJump && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            playerMoved[1] = 9.0f / fpsStopwatch.get();
+            playerMoved[1] = 9.0f / (float)fpsStopwatch.get();
         else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            playerMoved[1] = -0.2f / fpsStopwatch.get();
+            playerMoved[1] = -0.2f / (float)fpsStopwatch.get();
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            playerMoved[0] = 0.2f / fpsStopwatch.get();
+            playerMoved[0] = 0.2f / (float)fpsStopwatch.get();
         else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            playerMoved[0] = -0.2f / fpsStopwatch.get();
+            playerMoved[0] = -0.2f / (float)fpsStopwatch.get();
         canJump = false;
         
         // gl: render
@@ -210,7 +210,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         
         // move the player
-        player.calcTimeStep(fpsStopwatch.get(), playerMoved[0], playerMoved[1] + gravity);
+        player.calcTimeStep((float)fpsStopwatch.get(), playerMoved[0], playerMoved[1] + gravity);
         fpsStopwatch.reset(); // reset fps timer
         playerMoved[0] = 0.0f;
         playerMoved[1] = 0.0f;
@@ -236,10 +236,10 @@ int main()
             player.p2.x = 1.0f;
             player.velocity.x = 0.0f;
         }
-        else if (player.p2.x > CONST::WINDOW_WIDTH)
+        else if (player.p2.x > CONST::WINDOW_VIRTUAL_WIDTH)
         {
-            player.p1.x = CONST::WINDOW_WIDTH - 1.0f;
-            player.p2.x = CONST::WINDOW_WIDTH;
+            player.p1.x = CONST::WINDOW_VIRTUAL_WIDTH - 1.0f;
+            player.p2.x = CONST::WINDOW_VIRTUAL_WIDTH;
             player.velocity.x = 0.0f;
         }
 
@@ -250,10 +250,10 @@ int main()
             player.p2.y = 1.0f;
             player.velocity.y = 0.0f;
         }
-        else if (player.p2.y > CONST::WINDOW_HEIGHT)
+        else if (player.p2.y > CONST::WINDOW_VIRTUAL_HEIGHT)
         {
-            player.p1.y = CONST::WINDOW_HEIGHT - 1.0f;
-            player.p2.y = CONST::WINDOW_HEIGHT;
+            player.p1.y = CONST::WINDOW_VIRTUAL_HEIGHT - 1.0f;
+            player.p2.y = CONST::WINDOW_VIRTUAL_HEIGHT;
             player.velocity.y = 0.0f;
         }
         
