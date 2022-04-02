@@ -1,7 +1,13 @@
 #pragma once
 
+#include <iostream> // for debug
+#include <fstream> // for reading/writing files
+#include <sstream> // for handling file contents
+#include <string> // for when const char* won't work
+
 class Settings {
 public:
+
     // straight from the settings file
     std::string window_title;
     int window_aspect_ratio_x;
@@ -17,6 +23,7 @@ public:
     float spf_cap;
     float window_virtual_width;
     float window_virtual_height;
+
     // constructor
     Settings(const char* fileDir) : dir(fileDir) {}
     // load settings from a specified directory
@@ -25,7 +32,7 @@ public:
         std::ifstream settingsFile(dir);
         if (!settingsFile.is_open())
         {
-            return 0;
+            return -1; // settings file was not found
         }
         bool namesFound[7] = {false};
         std::string line;
@@ -33,38 +40,35 @@ public:
         {
             for (int i = 0; i < namesListLength; i++)
             {
-                if (!namesFound[i])
+                if (!namesFound[i] && !line.find(namesList[i]))
                 {
-                    if (!line.find(namesList[i]))
+                    namesFound[i] = true;
+                    std::istringstream value(line.substr(line.find("=") + 2));
+                    switch (i)
                     {
-                        namesFound[i] = true;
-                        std::istringstream value(line.substr(line.find("=") + 1));
-                        switch (i)
-                        {
-                        case 0:
-                            window_title = value.str();
-                            break;
-                        case 1:
-                            window_aspect_ratio_x = std::stoi(value.str());
-                            break;
-                        case 2:
-                            window_aspect_ratio_y = std::stoi(value.str());
-                            break;
-                        case 3:
-                            window_scale = std::stoi(value.str());
-                            break;
-                        case 4:
-                            fps_cap = std::stof(value.str());
-                            break;
-                        case 5:
-                            inv_scale_factor = std::stoi(value.str());
-                            break;
-                        case 6:
-                            physics_error_margin = std::stof(value.str());
-                            break;
-                        }
+                    case 0:
+                        window_title = value.str();
+                        break;
+                    case 1:
+                        window_aspect_ratio_x = std::stoi(value.str());
+                        break;
+                    case 2:
+                        window_aspect_ratio_y = std::stoi(value.str());
+                        break;
+                    case 3:
+                        window_scale = std::stoi(value.str());
+                        break;
+                    case 4:
+                        fps_cap = std::stof(value.str());
+                        break;
+                    case 5:
+                        inv_scale_factor = std::stoi(value.str());
+                        break;
+                    case 6:
+                        physics_error_margin = std::stof(value.str());
                         break;
                     }
+                    break;
                 }
             }
         }
@@ -72,7 +76,7 @@ public:
         {
             if (namesFound[i] == false)
             {
-                return 0;
+                return -i - 2; // missing variable in settings file
             }
         }
         window_width = window_aspect_ratio_x * window_scale;
@@ -155,21 +159,3 @@ private:
                                        "inv_scale_factor",
                                        "physics_error_margin" };
 };
-
-/*
-// global constants
-namespace CONST {
-    const int WINDOW_ASPECT_RATIO[2] = { 16, 9 };
-    const int WINDOW_DEFAULT_SCALE = 100;
-    const int WINDOW_DEFAULT_WIDTH = WINDOW_ASPECT_RATIO[0] * WINDOW_DEFAULT_SCALE;
-    const int WINDOW_DEFAULT_HEIGHT = WINDOW_ASPECT_RATIO[1] * WINDOW_DEFAULT_SCALE;
-    const char* WINDOW_DEFAULT_TITLE = "2D Physics Game";
-    const float WINDOW_ASPECT_RATIO_DEC = (float)(WINDOW_ASPECT_RATIO[0] * WINDOW_DEFAULT_SCALE) / (float)(WINDOW_ASPECT_RATIO[1] * WINDOW_DEFAULT_SCALE);
-    const float FPS_CAP = 60.0f; // frames per second ceiling, >1000 is essentially unlimited but there's no practical purpose for >60 anyway
-    const float SPF_CAP = 1.0f / FPS_CAP; // seconds per frame ceiling
-    const int INV_SCALE_FACTOR = 10; // relative to the window height
-    const float WINDOW_VIRTUAL_WIDTH = WINDOW_ASPECT_RATIO_DEC * (float)INV_SCALE_FACTOR; // window width in virtual units
-    const float WINDOW_VIRTUAL_HEIGHT = (float)CONST::INV_SCALE_FACTOR; // window height in virtual units
-    const double PHYSICS_ERROR_MARGIN = 0.0001;
-}
-*/

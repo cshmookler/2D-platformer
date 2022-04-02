@@ -4,13 +4,13 @@
 #include <iostream> // for debug
 #include <fstream> // for reading/writing files
 #include <sstream> // for changing the window title
-#include <string> // strings
+#include <string> // for when const char* won't work
 #include <cmath> // for advanced math functions
 
 // public (external) libraries
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <ft2build.h>
+#include <glad/glad.h> // loader for OpenGL
+#include <GLFW/glfw3.h> // API for window creation
+#include <ft2build.h> // render fonts
 #include FT_FREETYPE_H
 
 // private libraries
@@ -36,9 +36,16 @@ int main(int argc, char** argv)
 
     // initialize settings
     Settings settings("data/settings.txt");
-    if (!settings.load())
+    int error = settings.load();
+    if (error == -1)
     {
-        std::cout << "Failed to load settings file" << std::endl;
+        std::cout << "Settings file not found" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    else if (error < -1)
+    {
+        std::cout << "Term #" << -error + 2 << " not found in settings file" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -90,7 +97,9 @@ int main(int argc, char** argv)
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << "Vertex shader compilation failed" << std::endl << infoLog << std::endl;
+        glfwTerminate();
+        return -1;
     }
     // compile the fragment shader
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -100,7 +109,9 @@ int main(int argc, char** argv)
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 1024, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << "Fragment shader compilation failed" << std::endl << infoLog << std::endl;
+        glfwTerminate();
+        return -1;
     }
     // create the shader program
     unsigned int shaderProgram = glCreateProgram();
@@ -110,8 +121,11 @@ int main(int argc, char** argv)
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        std::cout << "Shader program linking failed" << std::endl << infoLog << std::endl;
+        glfwTerminate();
+        return -1;
     }
+    // deallocate vertex shader and fragment shader
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     // deallocate 'infolog'
