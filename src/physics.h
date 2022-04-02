@@ -11,6 +11,9 @@ namespace physics
 		Point() {}
 		Point(float x, float y) : x(x), y(y) {}
 	};
+	// scaler operations (overload addition and subtraction operators)
+	Point operator+(Point& p, float f) { return Point(p.x + f, p.y + f); }
+	Point operator-(Point& p, float f) { return Point(p.x - f, p.y - f); }
 	// create alias 'Vector' for 'Point'
 	typedef Point Vector;
 

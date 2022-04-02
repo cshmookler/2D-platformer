@@ -1,21 +1,28 @@
-//#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+//#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup") // starts the program without the console
 
+// standard libraries
 #include <iostream> // for debug
+#include <fstream> // for reading/writing files
 #include <sstream> // for changing the window title
-#include <math.h> // for abs()
+#include <string> // strings
+#include <cmath> // for advanced math functions
 
+// public (external) libraries
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "constants.h"
+// private libraries
 #include "tools.h"
 #include "physics.h"
+#include "settings.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
-int main()
+// program entry point
+int main(int argc, char** argv)
 {
     // glfw: initialize and configure
     glfwInit();
@@ -23,12 +30,21 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
+
+    // initialize settings
+    Settings settings("data/settings.txt");
+    if (!settings.load())
+    {
+        std::cout << "Failed to load settings file" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
 
     // glfw: window creation
-    GLFWwindow* window = glfwCreateWindow(CONST::WINDOW_DEFAULT_WIDTH, CONST::WINDOW_DEFAULT_HEIGHT, CONST::WINDOW_DEFAULT_TITLE, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(settings.window_width, settings.window_height, settings.window_title.c_str(), NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -37,7 +53,7 @@ int main()
     }
     glfwSetWindowAspectRatio(window, 16, 9);
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -135,7 +151,6 @@ int main()
         std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
         return -1;
     }
-
     FT_Face face;
     if (FT_New_Face(ft, "C:/Windows/Fonts/Arial.ttf", 0, &face))
     {
@@ -144,19 +159,20 @@ int main()
     }
     
     // player object
-    physics::Object player(CONST::WINDOW_ASPECT_RATIO_DEC,
-                           CONST::INV_SCALE_FACTOR,
-                           physics::Point((CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) - 0.5f, 0.0f),
-                           physics::Point((CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) + 0.5f, 1.0f));
+    physics::Point playerInitPos = { (settings.window_virtual_width / 2.0f) - 0.5f, 0.0f };
+    physics::Object player(settings.window_aspect_ratio_dec,
+                           settings.inv_scale_factor,
+                           physics::Point(playerInitPos.x, playerInitPos.y),
+                           physics::Point(playerInitPos.x + 1.0f, playerInitPos.y + 1.0f));
     // additional variables
     float playerColor[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
-    float playerMoved[2] = { 0.0f, 0.0f };
+    physics::Vector playerMoved = { 0.0f, 0.0f };
     float gravity = -9.8f;
     bool canJump = false;
 
     // green box
-    physics::Barrier2D box(CONST::WINDOW_ASPECT_RATIO_DEC,
-                           CONST::INV_SCALE_FACTOR,
+    physics::Barrier2D box(settings.window_aspect_ratio_dec,
+                           settings.inv_scale_factor,
                            physics::Point(0.0f, 0.0f),
                            physics::Point(2.0f, 2.0f));
     // additional variables
@@ -189,20 +205,18 @@ int main()
         {
             player.velocity.x = 0.0f;
             player.velocity.y = 0.0f;
-            player.p1.x = (CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) - 0.5f;
-            player.p1.y = 0.0f;
-            player.p2.x = (CONST::WINDOW_VIRTUAL_WIDTH / 2.0f) + 0.5f;
-            player.p2.y = 1.0f;
+            player.p1 = playerInitPos;
+            player.p2 = playerInitPos + 1.0f;
         }
         // player movement
         if (canJump && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            playerMoved[1] = 9.0f / (float)fpsStopwatch.get();
+            playerMoved.y = 9.0f / (float)fpsStopwatch.get();
         else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            playerMoved[1] = -0.2f / (float)fpsStopwatch.get();
+            playerMoved.y = -0.2f / (float)fpsStopwatch.get();
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            playerMoved[0] = 0.2f / (float)fpsStopwatch.get();
+            playerMoved.x = 0.2f / (float)fpsStopwatch.get();
         else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            playerMoved[0] = -0.2f / (float)fpsStopwatch.get();
+            playerMoved.x = -0.2f / (float)fpsStopwatch.get();
         canJump = false;
         
         // gl: render
@@ -210,10 +224,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         
         // move the player
-        player.calcTimeStep((float)fpsStopwatch.get(), playerMoved[0], playerMoved[1] + gravity);
+        player.calcTimeStep((float)fpsStopwatch.get(), playerMoved.x, playerMoved.y + gravity);
         fpsStopwatch.reset(); // reset fps timer
-        playerMoved[0] = 0.0f;
-        playerMoved[1] = 0.0f;
+        playerMoved.x = 0.0f;
+        playerMoved.y = 0.0f;
         
         // detect and resolve collisions
         if (physics::objectIntersectsBarrier(player, box))
@@ -236,10 +250,10 @@ int main()
             player.p2.x = 1.0f;
             player.velocity.x = 0.0f;
         }
-        else if (player.p2.x > CONST::WINDOW_VIRTUAL_WIDTH)
+        else if (player.p2.x > settings.window_virtual_width)
         {
-            player.p1.x = CONST::WINDOW_VIRTUAL_WIDTH - 1.0f;
-            player.p2.x = CONST::WINDOW_VIRTUAL_WIDTH;
+            player.p1.x = settings.window_virtual_width - 1.0f;
+            player.p2.x = settings.window_virtual_width;
             player.velocity.x = 0.0f;
         }
 
@@ -250,10 +264,10 @@ int main()
             player.p2.y = 1.0f;
             player.velocity.y = 0.0f;
         }
-        else if (player.p2.y > CONST::WINDOW_VIRTUAL_HEIGHT)
+        else if (player.p2.y > settings.window_virtual_height)
         {
-            player.p1.y = CONST::WINDOW_VIRTUAL_HEIGHT - 1.0f;
-            player.p2.y = CONST::WINDOW_VIRTUAL_HEIGHT;
+            player.p1.y = settings.window_virtual_height - 1.0f;
+            player.p2.y = settings.window_virtual_height;
             player.velocity.y = 0.0f;
         }
         
@@ -277,7 +291,7 @@ int main()
         if (titleUpdateStopwatch.get() >= 1.0)
         {
             std::stringstream frameCount;
-            frameCount << CONST::WINDOW_DEFAULT_TITLE << " [ FPS: " << fpsCounter.get() << " / " << CONST::FPS_CAP << " ]";
+            frameCount << settings.window_title << " [ FPS: " << fpsCounter.get() << " / " << settings.fps_cap << " ]";
             glfwSetWindowTitle(window, frameCount.str().c_str());
             fpsCounter.set(0);
             titleUpdateStopwatch.reset();
@@ -288,7 +302,7 @@ int main()
         }
 
         // wait until the next frame
-        while (fpsStopwatch.get() < CONST::SPF_CAP)
+        while (fpsStopwatch.get() < settings.spf_cap)
         {
             // do nothing
         }
@@ -306,7 +320,7 @@ int main()
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }

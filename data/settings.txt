@@ -1,0 +1,7 @@
+window_title = 2D Physics Game
+window_aspect_ratio_x = 16
+window_aspect_ratio_y = 9
+window_scale = 100
+fps_cap = 60
+inv_scale_factor = 10
+physics_error_margin = 0.0001

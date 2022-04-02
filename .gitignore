@@ -1,3 +1,6 @@
+# ignore object files
 obj
+# ignore executables
 bin
+# ignore hidden Visual Studio file
 .vs
