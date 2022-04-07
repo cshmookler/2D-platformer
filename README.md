@@ -17,6 +17,6 @@ Written in C++ using OpenGL, GLAD, and GLFW. Developed in Visual Studio 2022.
 1. Clone this repository and open its solution (2D platformer.sln) in Microsoft Visual Studio.
 2. Build the project using your preferred configuration (Recommended: Release \- x64).
 3. An executable will be generated at \*project directory\*/bin/\*configuration\*/2D platformer.exe. To run the executable outside of Visual Studio, copy the data folder and all DLLs in the project directory to the same location as the executable. Without these the program will crash on startup.
-4. Run the executable. Please report any errors you encounter.
+4. Please report any errors you encounter.
 ## Release v0.1.0
 Coming soon...
