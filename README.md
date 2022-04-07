@@ -6,13 +6,13 @@ Written in C++ using OpenGL, GLAD, and GLFW. Developed in Visual Studio 2022.
  - Lifelike object motion
  - Basic object collision
  - FPS displayed in the window title
- - *Settings file* (recently added)
+ - Settings file
+ - *Option to change camera position relative to the virtual world* (recently added)
 ### Coming soon:
  - Sweep-based continuos collision detection (CCD)
  - Object collision optimization (trim redundent side lengths from collision map)
  - Playable levels
  - Display FPS in the debug menu
- - Option to change camera position relative to the virtual world
 ## Build this project from source
 1. Clone this repository and open its solution (2D platformer.sln) in Microsoft Visual Studio.
 2. Build the project using your preferred configuration (Recommended: Release \- x64).
