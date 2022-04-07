@@ -2,6 +2,7 @@
 
 namespace tools
 {
+	// basic stopwatch
 	class Stopwatch {
 	public:
 		Stopwatch(double currentTime = glfwGetTime()) : startTime(currentTime) {}
@@ -17,6 +18,7 @@ namespace tools
 		double startTime;
 	};
 
+	// basic counter
 	class Counter {
 	public:
 		Counter(int initValue = 0) : value(initValue) {}

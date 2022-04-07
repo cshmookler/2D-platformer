@@ -5,3 +5,5 @@ window_scale = 100
 fps_cap = 60
 inv_scale_factor = 10
 physics_error_margin = 0.0001
+camera_position_x = 0
+camera_position_y = 0

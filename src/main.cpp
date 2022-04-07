@@ -15,8 +15,8 @@
 
 // private libraries
 #include "tools.h"
-#include "physics.h"
 #include "settings.h"
+#include "physics.h"
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -45,11 +45,11 @@ int main(int argc, char** argv)
     }
     else if (error < -1)
     {
-        std::cout << "Term #" << -error + 2 << " not found in settings file" << std::endl;
+        std::cout << "Setting #" << -error - 2 << " not found in settings file" << std::endl;
         glfwTerminate();
         return -1;
     }
-
+    
     // glfw: window creation
     GLFWwindow* window = glfwCreateWindow(settings.window_width, settings.window_height, settings.window_title.c_str(), NULL, NULL);
     if (window == NULL)
@@ -189,9 +189,12 @@ int main(int argc, char** argv)
                            settings.inv_scale_factor,
                            physics::Point(0.0f, 0.0f),
                            physics::Point(2.0f, 2.0f));
+    box.setVertices(settings.camera_position_x, settings.camera_position_y);
     // additional variables
     float barrierColor[4] = { 0.0f, 1.0f, 0.5f, 1.0f };
     bool inBox = false;
+
+    physics::Point intersect;
 
     // start timers:
     // timer that is used to update the fps counter once every second
@@ -214,6 +217,12 @@ int main(int argc, char** argv)
         // disable wireframe mode when the '2' key is pressed
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+            settings.inv_scale_factor -= 0.1;
+        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+            settings.inv_scale_factor += 0.1;
+
         // move the player to a set location when the 'T' key is pressed
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
         {
@@ -222,6 +231,7 @@ int main(int argc, char** argv)
             player.p1 = playerInitPos;
             player.p2 = playerInitPos + 1.0f;
         }
+
         // player movement
         if (canJump && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             playerMoved.y = 9.0f / (float)fpsStopwatch.get();
@@ -242,8 +252,15 @@ int main(int argc, char** argv)
         fpsStopwatch.reset(); // reset fps timer
         playerMoved.x = 0.0f;
         playerMoved.y = 0.0f;
-        
+
+        physics::Point playerLeft(player.p1.x, player.p2.y);
+        physics::Point boxTop(box.p1.x, box.p2.y);
         // detect and resolve collisions
+        voidFloatError(player.p1, playerLeft, settings.physics_error_margin);
+
+        if (lineIntersectsLine(boxTop, box.p2, player.p1, playerLeft, intersect))
+            std::cout << "blob" << std::endl;
+
         if (physics::objectIntersectsBarrier(player, box))
         {
             if (!inBox)
@@ -286,13 +303,13 @@ int main(int argc, char** argv)
         }
         
         // gl: render the player
-        player.setVertices();
+        player.setVertices(settings.camera_position_x, settings.camera_position_y);
         glBufferData(GL_ARRAY_BUFFER, sizeof(player.vertices), player.vertices, GL_DYNAMIC_DRAW);
         glUniform4f(glGetUniformLocation(shaderProgram, "color"), playerColor[0], playerColor[1], playerColor[2], playerColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             
         // gl: render the green box
-        //box.setVertices(); // box position is static; no need to update vertices on every frame
+        box.setVertices(settings.camera_position_x, settings.camera_position_y); // box position is static; no need to update vertices on every frame
         glBufferData(GL_ARRAY_BUFFER, sizeof(box.vertices), box.vertices, GL_STATIC_DRAW);
         glUniform4f(glGetUniformLocation(shaderProgram, "color"), barrierColor[0], barrierColor[1], barrierColor[2], barrierColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -327,7 +344,7 @@ int main(int argc, char** argv)
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
-
+    
     // glfw: terminate, clearing all previously allocated GLFW resources.
     glfwTerminate();
     return 0;
