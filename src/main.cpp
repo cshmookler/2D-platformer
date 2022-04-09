@@ -14,7 +14,7 @@
 #include FT_FREETYPE_H
 
 // private libraries
-#include "constants.h"
+#include "const.h"
 #include "tools.h"
 #include "files.h"
 #include "ocp.h"
