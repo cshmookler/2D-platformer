@@ -14,9 +14,10 @@
 #include FT_FREETYPE_H
 
 // private libraries
+#include "constants.h"
 #include "tools.h"
-#include "settings.h"
-#include "physics.h"
+#include "files.h"
+#include "ocp.h"
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
     #endif
 
     // initialize settings
-    Settings settings("data/settings.txt");
+    files::Settings settings(CONST::SETTINGS_DIR);
     int error = settings.load();
     if (error == -1)
     {
@@ -69,23 +70,22 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // vertex shader source
-    const char* vertexShaderSource =
-        "#version 330 core\n"
-        "layout(location = 0) in vec3 pos;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = vec4(pos, 1.0);\n"
-        "}\0";
-    // fragment shader source
-    const char* fragmentShaderSource =
-        "#version 330 core\n"
-        "uniform vec4 color;\n"
-        "out vec4 fragColor;\n"
-        "void main()\n"
-        "{\n"
-        "    fragColor = vec4(color);\n"
-        "}\0";
+    // load vertex shader
+    std::string vertexShaderBuffer = files::loadFile(settings.shader_dir + "basic.vertex.glsl");
+    const char* vertexShaderSource = vertexShaderBuffer.c_str();
+    if (vertexShaderSource == std::string())
+    {
+        std::cout << "Failed to load vertex shader" << std::endl; // vertex shader file either wasn't found or is empty
+        return -1;
+    }
+    // load fragment shader
+    std::string fragmentShaderBuffer = files::loadFile(settings.shader_dir + "basic.fragment.glsl");
+    const char* fragmentShaderSource = fragmentShaderBuffer.c_str();
+    if (fragmentShaderSource == std::string())
+    {
+        std::cout << "Failed to load fragment shader" << std::endl; // fragment shader file either wasn't found or is empty
+        return -1;
+    }
 
     // compile the vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -171,30 +171,34 @@ int main(int argc, char** argv)
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
         return -1;
     }
+
+    ocp::Point intersect;
     
     // player object
-    physics::Point playerInitPos = { (settings.window_virtual_width / 2.0f) - 0.5f, 0.0f };
-    physics::Object player(settings.window_aspect_ratio_dec,
-                           settings.inv_scale_factor,
-                           physics::Point(playerInitPos.x, playerInitPos.y),
-                           physics::Point(playerInitPos.x + 1.0f, playerInitPos.y + 1.0f));
+    ocp::Point playerInitPos = { (settings.window_virtual_width / 2.0f) - 0.5f, 0.0f };
+    ocp::Object player(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(playerInitPos.x, playerInitPos.y), ocp::Point(playerInitPos.x + 1.0f, playerInitPos.y + 1.0f));
     // additional variables
     float playerColor[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
-    physics::Vector playerMoved = { 0.0f, 0.0f };
+    ocp::Vector playerMoved = { 0.0f, 0.0f };
     float gravity = -9.8f;
     bool canJump = false;
 
     // green box
-    physics::Barrier2D box(settings.window_aspect_ratio_dec,
-                           settings.inv_scale_factor,
-                           physics::Point(0.0f, 0.0f),
-                           physics::Point(2.0f, 2.0f));
+    ocp::Barrier2D box(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(2.0f, 2.0f));
     box.setVertices(settings.camera_position_x, settings.camera_position_y);
     // additional variables
-    float barrierColor[4] = { 0.0f, 1.0f, 0.5f, 1.0f };
-    bool inBox = false;
+    float objectColor[4] = { 0.0f, 1.0f, 0.5f, 1.0f };
 
-    physics::Point intersect;
+    // barrier
+    float barrierColor[4] = { 0.75f, 0.0f, 0.0f, 1.0f };
+    ocp::Barrier1D lowerBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(settings.window_virtual_width, 0.0f));
+    ocp::Barrier1D upperBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, settings.window_virtual_height), ocp::Point(settings.window_virtual_width, settings.window_virtual_height));
+    ocp::Barrier1D leftBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(0.0f, settings.window_virtual_height));
+    ocp::Barrier1D rightBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(settings.window_virtual_width, 0.0f), ocp::Point(settings.window_virtual_width, settings.window_virtual_height));
+    box.setVertices(settings.camera_position_x, settings.camera_position_y);
+
+    float init_virtual_width = settings.window_virtual_width;
+    float init_virtual_height = settings.window_virtual_height;
 
     // start timers:
     // timer that is used to update the fps counter once every second
@@ -218,10 +222,29 @@ int main(int argc, char** argv)
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+        // zooming in and out
         if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-            settings.inv_scale_factor -= 0.1;
-        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-            settings.inv_scale_factor += 0.1;
+            settings.inv_scale_factor -= 0.1f;
+        else if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+            settings.inv_scale_factor += 0.1f;
+        // moving the camera
+        if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+            settings.camera_position_y += 0.01f;
+        else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+            settings.camera_position_y -= 0.01f;
+        if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+            settings.camera_position_x += 0.01f;
+        else if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+            settings.camera_position_x -= 0.01f;
+        // reset camera position and zoom
+        if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+        {
+            settings.camera_position_x = 0.0f;
+            settings.camera_position_y = 0.0f;
+            settings.inv_scale_factor = 10.0f;
+        }
+
+        settings.reload_derived();
 
         // move the player to a set location when the 'T' key is pressed
         if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
@@ -241,7 +264,6 @@ int main(int argc, char** argv)
             playerMoved.x = 0.2f / (float)fpsStopwatch.get();
         else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
             playerMoved.x = -0.2f / (float)fpsStopwatch.get();
-        canJump = false;
         
         // gl: render
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -253,38 +275,24 @@ int main(int argc, char** argv)
         playerMoved.x = 0.0f;
         playerMoved.y = 0.0f;
 
-        physics::Point playerLeft(player.p1.x, player.p2.y);
-        physics::Point boxTop(box.p1.x, box.p2.y);
+        ocp::Point playerLeft(player.p1.x, player.p2.y);
+        ocp::Point playerRight(player.p2.x, player.p1.y);
         // detect and resolve collisions
-        voidFloatError(player.p1, playerLeft, settings.physics_error_margin);
-
+        voidMinorPosDiff(player.p1, playerLeft, settings.physics_error_margin);
+        /*
         if (lineIntersectsLine(boxTop, box.p2, player.p1, playerLeft, intersect))
             std::cout << "blob" << std::endl;
-
-        if (physics::objectIntersectsBarrier(player, box))
-        {
-            if (!inBox)
-            {
-                std::cout << "You are in the box!" << std::endl;
-                inBox = true;
-            }
-        }
-        else if (inBox)
-        {
-            std::cout << "You are not in the box." << std::endl;
-            inBox = false;
-        }
-            
+        */
         if (player.p1.x < 0.0f)
         {
             player.p1.x = 0.0f;
             player.p2.x = 1.0f;
             player.velocity.x = 0.0f;
         }
-        else if (player.p2.x > settings.window_virtual_width)
+        else if (player.p2.x > init_virtual_width)
         {
-            player.p1.x = settings.window_virtual_width - 1.0f;
-            player.p2.x = settings.window_virtual_width;
+            player.p1.x = init_virtual_width - 1.0f;
+            player.p2.x = init_virtual_width;
             player.velocity.x = 0.0f;
         }
 
@@ -295,12 +303,34 @@ int main(int argc, char** argv)
             player.p2.y = 1.0f;
             player.velocity.y = 0.0f;
         }
-        else if (player.p2.y > settings.window_virtual_height)
+        else
         {
-            player.p1.y = settings.window_virtual_height - 1.0f;
-            player.p2.y = settings.window_virtual_height;
-            player.velocity.y = 0.0f;
+            canJump = false;
+            if (player.p2.y > init_virtual_height)
+            {
+                player.p1.y = init_virtual_height - 1.0f;
+                player.p2.y = init_virtual_height;
+                player.velocity.y = 0.0f;
+            }
         }
+
+        // gl: render barriers
+        lowerBound.setVertices(settings.camera_position_x, settings.camera_position_y);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(lowerBound.vertices), lowerBound.vertices, GL_DYNAMIC_DRAW);
+        glUniform4f(glGetUniformLocation(shaderProgram, "color"), barrierColor[0], barrierColor[1], barrierColor[2], barrierColor[3]);
+        glDrawArrays(GL_LINES, 0, 2);
+
+        upperBound.setVertices(settings.camera_position_x, settings.camera_position_y);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(upperBound.vertices), upperBound.vertices, GL_DYNAMIC_DRAW);
+        glDrawArrays(GL_LINES, 0, 2);
+
+        leftBound.setVertices(settings.camera_position_x, settings.camera_position_y);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(leftBound.vertices), leftBound.vertices, GL_DYNAMIC_DRAW);
+        glDrawArrays(GL_LINES, 0, 2);
+
+        rightBound.setVertices(settings.camera_position_x, settings.camera_position_y);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(rightBound.vertices), rightBound.vertices, GL_DYNAMIC_DRAW);
+        glDrawArrays(GL_LINES, 0, 2);
         
         // gl: render the player
         player.setVertices(settings.camera_position_x, settings.camera_position_y);
@@ -310,10 +340,10 @@ int main(int argc, char** argv)
             
         // gl: render the green box
         box.setVertices(settings.camera_position_x, settings.camera_position_y); // box position is static; no need to update vertices on every frame
-        glBufferData(GL_ARRAY_BUFFER, sizeof(box.vertices), box.vertices, GL_STATIC_DRAW);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), barrierColor[0], barrierColor[1], barrierColor[2], barrierColor[3]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(box.vertices), box.vertices, GL_DYNAMIC_DRAW);
+        glUniform4f(glGetUniformLocation(shaderProgram, "color"), objectColor[0], objectColor[1], objectColor[2], objectColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        
+
         // glfw: swap buffers and poll IO events
         glfwSwapBuffers(window);
         glfwPollEvents();

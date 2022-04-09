@@ -1,16 +1,18 @@
 #pragma once
 
+#include <iostream> // for debug
+
 namespace tools
 {
 	// basic stopwatch
 	class Stopwatch {
 	public:
 		Stopwatch(double currentTime = glfwGetTime()) : startTime(currentTime) {}
-		double get(double currentTime = glfwGetTime())
+		inline double get(double currentTime = glfwGetTime())
 		{
 			return currentTime - startTime;
 		}
-		void reset(double currentTime = glfwGetTime())
+		inline void reset(double currentTime = glfwGetTime())
 		{
 			startTime = currentTime;
 		}
@@ -22,16 +24,16 @@ namespace tools
 	class Counter {
 	public:
 		Counter(int initValue = 0) : value(initValue) {}
-		int get(void)
+		inline int get(void)
 		{
 			return value;
 		}
-		void set(int newValue = 0)
+		inline void set(int newValue = 0)
 		{
 			value = newValue;
 		}
-		void inc(void) { value++; }
-		void dec(void) { value--; }
+		inline void inc(void) { value++; }
+		inline void dec(void) { value--; }
 	private:
 		int value;
 	};
