@@ -32,7 +32,7 @@
     <ClInclude Include="src\files.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\constants.h">
+    <ClInclude Include="src\const.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

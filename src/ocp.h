@@ -279,6 +279,9 @@ namespace ocp // objects, collision, and physics
 			intersect.y = p3.y;
 			return ((p1.x == p3.x) && (p1.y == p3.y));
 		}
+		default: { // it shouldn't be possible to get here
+			return 0;
+		}
 		}
 	}
 

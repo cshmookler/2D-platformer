@@ -167,7 +167,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\const.h" />
     <ClInclude Include="src\ocp.h" />
     <ClInclude Include="src\files.h" />
     <ClInclude Include="src\tools.h" />

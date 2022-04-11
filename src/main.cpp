@@ -24,7 +24,29 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 // program entry point
 int main(int argc, char** argv)
-{
+{/*
+    // initialize settings
+    files::Settings settings(CONST::SETTINGS_DIR);
+    int error = settings.load();
+    if (error == -1)
+    {
+        std::cout << "Settings file not found" << std::endl;
+        return -1;
+    }
+    else if (error < -1)
+    {
+        std::cout << "Setting #" << -error - 2 << " not found in settings file" << std::endl;
+        return -1;
+    }
+
+    // init FreeType
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return -1;
+    }
+
     // glfw: initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -34,22 +56,6 @@ int main(int argc, char** argv)
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
-
-    // initialize settings
-    files::Settings settings(CONST::SETTINGS_DIR);
-    int error = settings.load();
-    if (error == -1)
-    {
-        std::cout << "Settings file not found" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    else if (error < -1)
-    {
-        std::cout << "Setting #" << -error - 2 << " not found in settings file" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
     
     // glfw: window creation
     GLFWwindow* window = glfwCreateWindow(settings.window_width, settings.window_height, settings.window_title.c_str(), NULL, NULL);
@@ -158,19 +164,40 @@ int main(int argc, char** argv)
     // use shader program
     glUseProgram(shaderProgram);
 
-    // load fonts
-    FT_Library ft;
-    if (FT_Init_FreeType(&ft))
-    {
-        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-        return -1;
-    }
+    // load font
     FT_Face face;
-    if (FT_New_Face(ft, "C:/Windows/Fonts/Arial.ttf", 0, &face))
+    if (FT_New_Face(ft, settings.font_dir.c_str(), 0, &face))
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
         return -1;
     }
+    FT_Set_Pixel_Sizes(face, 0, 48); // font size of 48
+    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+    {
+        std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+        return -1;
+    }
+
+    // generate texture
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        face->glyph->bitmap.width,
+        face->glyph->bitmap.rows,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        face->glyph->bitmap.buffer
+    );
+    // set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     ocp::Point intersect;
     
@@ -282,7 +309,7 @@ int main(int argc, char** argv)
         /*
         if (lineIntersectsLine(boxTop, box.p2, player.p1, playerLeft, intersect))
             std::cout << "blob" << std::endl;
-        */
+        
         if (player.p1.x < 0.0f)
         {
             player.p1.x = 0.0f;
@@ -376,7 +403,7 @@ int main(int argc, char** argv)
     glDeleteProgram(shaderProgram);
     
     // glfw: terminate, clearing all previously allocated GLFW resources.
-    glfwTerminate();
+    glfwTerminate();*/
     return 0;
 }
 

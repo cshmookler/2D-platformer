@@ -1,6 +1,7 @@
 window_title = 2D Physics Game
 shader_dir = data/shaders/
 asset_dir = data/assets/
+font_dir = C:/Windows/Fonts/Arial.ttf
 window_aspect_ratio_x = 16
 window_aspect_ratio_y = 9
 window_scale = 100

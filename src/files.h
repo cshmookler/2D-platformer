@@ -13,7 +13,7 @@ namespace files
         // settings file directory
         const char* dir;
         // size of variable arrays
-        static const int numStringValues = 3;
+        static const int numStringValues = 4;
         static const int numIntValues = 3;
         static const int numFloatValues = 5;
         // where the loaded variables are stored during program execution
@@ -24,7 +24,8 @@ namespace files
         const std::string stringNames[numStringValues] = {
             "window_title",
             "shader_dir",
-            "asset_dir"
+            "asset_dir",
+            "font_dir"
         };
         const std::string intNames[numIntValues] = {
             "window_aspect_ratio_x",
@@ -44,6 +45,7 @@ namespace files
         window_title = stringValues[0]
         shader_dir = stringValues[1]
         asset_dir = stringValues[2]
+        font_dir = stringValues[3]
         // integers
         window_aspect_ratio_x = intValues[0]
         window_aspect_ratio_y = intValues[1]
@@ -59,6 +61,7 @@ namespace files
         std::string& window_title = stringValues[0];
         std::string& shader_dir = stringValues[1];
         std::string& asset_dir = stringValues[2];
+        std::string& font_dir = stringValues[3];
         int& window_aspect_ratio_x = intValues[0];
         int& window_aspect_ratio_y = intValues[1];
         int& window_scale = intValues[2];
@@ -176,6 +179,7 @@ namespace files
             std::cout << "window_title: " << window_title << std::endl;
             std::cout << "shader_dir: " << shader_dir << std::endl;
             std::cout << "asset_dir: " << asset_dir << std::endl;
+            std::cout << "font_dir: " << font_dir << std::endl;
             std::cout << "window_aspect_ratio_x: " << window_aspect_ratio_x << std::endl;
             std::cout << "window_aspect_ratio_y: " << window_aspect_ratio_y << std::endl;
             std::cout << "window_scale: " << window_scale << std::endl;
