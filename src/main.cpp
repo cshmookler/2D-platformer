@@ -41,8 +41,8 @@ int main(int argc, char** argv)
     }
     
     // init FreeType
-    FT_Library ft;
-    if (FT_Init_FreeType(&ft))
+    FT_Library freetype;
+    if (FT_Init_FreeType(&freetype))
     {
         std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
         return -1;
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
     
     // load font
     FT_Face face;
-    if (FT_New_Face(ft, settings.font_dir.c_str(), 0, &face))
+    if (FT_New_Face(freetype, settings.font_dir.c_str(), 0, &face))
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
         return -1;
