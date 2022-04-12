@@ -10,6 +10,7 @@
 // public (external) libraries
 #include <glad/glad.h> // loader for OpenGL
 #include <GLFW/glfw3.h> // API for window creation
+
 #include <ft2build.h> // render fonts
 #include FT_FREETYPE_H
 
@@ -24,7 +25,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 // program entry point
 int main(int argc, char** argv)
-{/*
+{
     // initialize settings
     files::Settings settings(CONST::SETTINGS_DIR);
     int error = settings.load();
@@ -38,7 +39,7 @@ int main(int argc, char** argv)
         std::cout << "Setting #" << -error - 2 << " not found in settings file" << std::endl;
         return -1;
     }
-
+    
     // init FreeType
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
@@ -46,13 +47,13 @@ int main(int argc, char** argv)
         std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
         return -1;
     }
-
+    
     // glfw: initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
@@ -75,7 +76,7 @@ int main(int argc, char** argv)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
+    
     // load vertex shader
     std::string vertexShaderBuffer = files::loadFile(settings.shader_dir + "basic.vertex.glsl");
     const char* vertexShaderSource = vertexShaderBuffer.c_str();
@@ -92,7 +93,7 @@ int main(int argc, char** argv)
         std::cout << "Failed to load fragment shader" << std::endl; // fragment shader file either wasn't found or is empty
         return -1;
     }
-
+    
     // compile the vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -163,7 +164,7 @@ int main(int argc, char** argv)
 
     // use shader program
     glUseProgram(shaderProgram);
-
+    
     // load font
     FT_Face face;
     if (FT_New_Face(ft, settings.font_dir.c_str(), 0, &face))
@@ -234,7 +235,7 @@ int main(int argc, char** argv)
     tools::Stopwatch fpsStopwatch;
     // counter to count the number of frames
     tools::Counter fpsCounter;
-
+    
     // glfw: program loop
     while (!glfwWindowShouldClose(window))
     {
@@ -309,7 +310,7 @@ int main(int argc, char** argv)
         /*
         if (lineIntersectsLine(boxTop, box.p2, player.p1, playerLeft, intersect))
             std::cout << "blob" << std::endl;
-        
+        */
         if (player.p1.x < 0.0f)
         {
             player.p1.x = 0.0f;
@@ -403,7 +404,7 @@ int main(int argc, char** argv)
     glDeleteProgram(shaderProgram);
     
     // glfw: terminate, clearing all previously allocated GLFW resources.
-    glfwTerminate();*/
+    glfwTerminate();
     return 0;
 }
 
