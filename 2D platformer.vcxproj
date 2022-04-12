@@ -167,6 +167,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="shader.h" />
     <ClInclude Include="src\const.h" />
     <ClInclude Include="src\ocp.h" />
     <ClInclude Include="src\files.h" />

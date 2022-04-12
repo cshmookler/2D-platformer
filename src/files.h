@@ -223,7 +223,7 @@ namespace files
     };
 
     // load the contents of a file
-    std::string loadFile(std::string dir)
+    std::string getFileContents(std::string dir)
     {
         // open file
         std::ifstream file(dir);

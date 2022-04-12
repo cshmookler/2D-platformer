@@ -22,6 +22,8 @@
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+// gl: create a shader program from a vertex shader source and a fragment shader source
+bool createShaderProgram(std::string vertexShaderDir, std::string fragmentShaderDir, unsigned int& shaderProgram);
 
 // program entry point
 int main(int argc, char** argv)
@@ -40,24 +42,15 @@ int main(int argc, char** argv)
         return -1;
     }
     
-    // init FreeType
-    FT_Library freetype;
-    if (FT_Init_FreeType(&freetype))
-    {
-        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-        return -1;
-    }
-    
     // glfw: initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
+    // basic cross-platform compatibility
     #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
-    
     // glfw: window creation
     GLFWwindow* window = glfwCreateWindow(settings.window_width, settings.window_height, settings.window_title.c_str(), NULL, NULL);
     if (window == NULL)
@@ -67,76 +60,26 @@ int main(int argc, char** argv)
         return -1;
     }
     glfwSetWindowAspectRatio(window, 16, 9);
-    glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwMakeContextCurrent(window);
 
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-    
-    // load vertex shader
-    std::string vertexShaderBuffer = files::loadFile(settings.shader_dir + "basic.vertex.glsl");
-    const char* vertexShaderSource = vertexShaderBuffer.c_str();
-    if (vertexShaderSource == std::string())
-    {
-        std::cout << "Failed to load vertex shader" << std::endl; // vertex shader file either wasn't found or is empty
-        return -1;
-    }
-    // load fragment shader
-    std::string fragmentShaderBuffer = files::loadFile(settings.shader_dir + "basic.fragment.glsl");
-    const char* fragmentShaderSource = fragmentShaderBuffer.c_str();
-    if (fragmentShaderSource == std::string())
-    {
-        std::cout << "Failed to load fragment shader" << std::endl; // fragment shader file either wasn't found or is empty
-        return -1;
-    }
-    
-    // compile the vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    int success;
-    char* infoLog = new char[1024];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
-        std::cout << "Vertex shader compilation failed" << std::endl << infoLog << std::endl;
         glfwTerminate();
         return -1;
     }
-    // compile the fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
+
+    // create shader program
+    unsigned int shaderProgram;
+    if (!createShaderProgram(settings.shader_dir + "basic.vertex.glsl", settings.shader_dir + "basic.fragment.glsl", shaderProgram))
     {
-        glGetShaderInfoLog(fragmentShader, 1024, NULL, infoLog);
-        std::cout << "Fragment shader compilation failed" << std::endl << infoLog << std::endl;
         glfwTerminate();
         return -1;
     }
-    // create the shader program
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
-        std::cout << "Shader program linking failed" << std::endl << infoLog << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    // deallocate vertex shader and fragment shader
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    // deallocate 'infolog'
-    delete[] infoLog;
+    // use shader program
+    glUseProgram(shaderProgram);
 
     // gl: set up vertex data, buffers, and configure vertex attributes
     unsigned int rectIndices[6] = {
@@ -162,20 +105,30 @@ int main(int argc, char** argv)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-    // use shader program
-    glUseProgram(shaderProgram);
-    
+    // init FreeType
+    FT_Library freetype;
+    if (FT_Init_FreeType(&freetype))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
     // load font
     FT_Face face;
     if (FT_New_Face(freetype, settings.font_dir.c_str(), 0, &face))
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+        FT_Done_FreeType(freetype);
+        glfwTerminate();
         return -1;
     }
     FT_Set_Pixel_Sizes(face, 0, 48); // font size of 48
     if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
     {
         std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+        FT_Done_FreeType(freetype);
+        glfwTerminate();
         return -1;
     }
 
@@ -200,6 +153,7 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    // intersect point for CCD
     ocp::Point intersect;
     
     // player object
@@ -402,14 +356,86 @@ int main(int argc, char** argv)
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
+
+    // freetype: de-allocate resources
+    FT_Done_FreeType(freetype);
     
     // glfw: terminate, clearing all previously allocated GLFW resources.
     glfwTerminate();
     return 0;
 }
 
+// function definitions ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+// gl: create a shader program from a vertex shader source and a fragment shader source
+bool createShaderProgram(std::string vertexShaderDir, std::string fragmentShaderDir, unsigned int& shaderProgram)
+{
+    // load vertex shader
+    std::string vertexShaderBuffer = files::getFileContents(vertexShaderDir);
+    const char* vertexShaderSource = vertexShaderBuffer.c_str();
+    if (vertexShaderSource == std::string())
+    {
+        std::cout << "Failed to load vertex shader" << std::endl; // vertex shader file either wasn't found or is empty
+        return 0;
+    }
+    // load fragment shader
+    std::string fragmentShaderBuffer = files::getFileContents(fragmentShaderDir);
+    const char* fragmentShaderSource = fragmentShaderBuffer.c_str();
+    if (fragmentShaderSource == std::string())
+    {
+        std::cout << "Failed to load fragment shader" << std::endl; // fragment shader file either wasn't found or is empty
+        return 0;
+    }
+
+    // compile the vertex shader
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    int success;
+    char infoLog[1024];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
+        glDeleteShader(vertexShader);
+        std::cout << "Vertex shader compilation failed" << std::endl << infoLog << std::endl;
+        return 0;
+    }
+    // compile the fragment shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 1024, NULL, infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        std::cout << "Fragment shader compilation failed" << std::endl << infoLog << std::endl;
+        return 0;
+    }
+    // create the shader program
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        std::cout << "Shader program linking failed" << std::endl << infoLog << std::endl;
+        return 0;
+    }
+
+    // deallocate vertex shader and fragment shader
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    return 1;
 }
