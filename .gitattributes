@@ -1,1 +1,2 @@
-external linguist-vendored=false
+# exclude external includes from language statistics
+external/** linguist-vendored=false
