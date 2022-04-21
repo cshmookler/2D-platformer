@@ -10,26 +10,29 @@
 // public (external) libraries
 #include <glad/glad.h> // loader for OpenGL
 #include <GLFW/glfw3.h> // API for window creation
-
-#include <ft2build.h> // render fonts
+#include <ft2build.h> // font loader
 #include FT_FREETYPE_H
 
-// private libraries
+// OpenGL math
+#include <glm/vec3.hpp> // glm::vec3
+
+// local headers
+#include "lgwrap/lgwrap.h"
 #include "const.h"
-#include "tools.h"
-#include "files.h"
-#include "ocp.h"
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-// gl: create a shader program from a vertex shader source and a fragment shader source
-bool createShaderProgram(std::string vertexShaderDir, std::string fragmentShaderDir, unsigned int& shaderProgram);
+// glfw: whenever a key is pressed this callback function executes
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+// glfw: whenever the mouse is moved this callback function executes
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+// glfw: whenever the mouse is clicked this callback function executes
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
-// program entry point
 int main(int argc, char** argv)
 {
     // initialize settings
-    files::Settings settings(CONST::SETTINGS_DIR);
+    lgw::Settings settings(CONST::SETTINGS_DIR);
     int error = settings.load();
     if (error == -1)
     {
@@ -55,154 +58,190 @@ int main(int argc, char** argv)
     GLFWwindow* window = glfwCreateWindow(settings.window_width, settings.window_height, settings.window_title.c_str(), NULL, NULL);
     if (window == NULL)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        std::cout << "glfw: failed to create window" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwSetWindowAspectRatio(window, 16, 9);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwMakeContextCurrent(window);
 
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "glad: init failed" << std::endl;
         glfwTerminate();
         return -1;
     }
-
-    // create shader program
-    unsigned int shaderProgram;
-    if (!createShaderProgram(settings.shader_dir + "basic.vertex.glsl", settings.shader_dir + "basic.fragment.glsl", shaderProgram))
-    {
-        glfwTerminate();
+    
+    // basic shader program
+    std::string vertexShaderDir = settings.shader_dir + "basic.vertex.glsl";
+    std::string fragmentShaderDir = settings.shader_dir + "basic.fragment.glsl";
+    lgw::VertexShader* vertexShader = new lgw::VertexShader(GL_VERTEX_SHADER, vertexShaderDir.c_str());
+    vertexShader->compile();
+    lgw::FragmentShader* fragmentShader = new lgw::FragmentShader(GL_FRAGMENT_SHADER, fragmentShaderDir.c_str());
+    fragmentShader->compile();
+    lgw::Shader* basicShader = new lgw::Shader(*vertexShader, *fragmentShader);
+    if (basicShader->link())
         return -1;
-    }
-    // use shader program
-    glUseProgram(shaderProgram);
-
+    delete vertexShader;
+    delete fragmentShader;
+    
+    // texture shader program
+    vertexShaderDir = settings.shader_dir + "texture.vertex.glsl";
+    fragmentShaderDir = settings.shader_dir + "texture.fragment.glsl";
+    lgw::VertexShader* vertexShaderr = new lgw::VertexShader(GL_VERTEX_SHADER, vertexShaderDir.c_str());
+    vertexShaderr->compile();
+    lgw::FragmentShader* fragmentShaderr = new lgw::FragmentShader(GL_FRAGMENT_SHADER, fragmentShaderDir.c_str());
+    fragmentShaderr->compile();
+    lgw::Shader* textureShader = new lgw::Shader(*vertexShaderr, *fragmentShaderr);
+    if (textureShader->link())
+        return -1;
+    delete vertexShaderr;
+    delete fragmentShaderr;
+    
     // gl: set up vertex data, buffers, and configure vertex attributes
     unsigned int rectIndices[6] = {
         0, 1, 3,   // first triangle
         1, 2, 3    // second triangle
     };
-    unsigned int VAO, VBO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    GLuint VAO_basic, VBO_basic, EBO_basic;
+    glGenVertexArrays(1, &VAO_basic);
+    glBindVertexArray(VAO_basic);
 
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glGenBuffers(1, &VBO_basic);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_basic);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8, nullptr, GL_DYNAMIC_DRAW);
 
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glGenBuffers(1, &EBO_basic);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_basic);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rectIndices), rectIndices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindVertexArray(VAO_basic);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_basic);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_basic);
+    
+    GLuint VAO_texture, VBO_texture;
+    glGenVertexArrays(1, &VAO_texture);
+    glBindVertexArray(VAO_texture);
+    glGenBuffers(1, &VBO_texture);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, NULL, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
 
-    // init FreeType
-    FT_Library freetype;
-    if (FT_Init_FreeType(&freetype))
-    {
-        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
+    lgw::FontLibrary ftLibrary;
+    ftLibrary.init();
+    lgw::Font activeFont(ftLibrary, settings.font_dir.c_str(), 128);
+    activeFont.load();
 
-    // load font
-    FT_Face face;
-    if (FT_New_Face(freetype, settings.font_dir.c_str(), 0, &face))
+    //FT_F26Dot6 fontPoint = 100;
+    //FT_Set_Char_Size(typeFace, 0, fontPoint * 64, settings.window_width, settings.window_height);
+    /*FT_UInt glyph_index = FT_Get_Char_Index(typeFace, (int)'A');
+    if (ftHandleError(FT_Load_Char(typeFace, glyph_index, FT_LOAD_RENDER))) // FT_LOAD_RENDER
     {
-        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
         FT_Done_FreeType(freetype);
         glfwTerminate();
         return -1;
-    }
-    FT_Set_Pixel_Sizes(face, 0, 48); // font size of 48
-    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
-    {
-        std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-        FT_Done_FreeType(freetype);
-        glfwTerminate();
-        return -1;
-    }
+    }*/
 
-    // generate texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RED,
-        face->glyph->bitmap.width,
-        face->glyph->bitmap.rows,
-        0,
-        GL_RED,
-        GL_UNSIGNED_BYTE,
-        face->glyph->bitmap.buffer
-    );
-    // set texture options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // toggles
+    // current draw mode
+    lgw::Toggle wireframe(false, true);
+    // display fps
+    lgw::Toggle showFPS(false, true);
 
     // intersect point for CCD
-    ocp::Point intersect;
+    lgw::Point intersect;
     
     // player object
-    ocp::Point playerInitPos = { (settings.window_virtual_width / 2.0f) - 0.5f, 0.0f };
-    ocp::Object player(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(playerInitPos.x, playerInitPos.y), ocp::Point(playerInitPos.x + 1.0f, playerInitPos.y + 1.0f));
+    lgw::Point playerInitPos = { (settings.window_virtual_width / 2.0f) - 0.5f, 0.0f };
+    lgw::Object player(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(playerInitPos.x, playerInitPos.y), lgw::Point(playerInitPos.x + 1.0f, playerInitPos.y + 1.0f));
     // additional variables
     float playerColor[4] = { 0.0f, 0.5f, 1.0f, 1.0f };
-    ocp::Vector playerMoved = { 0.0f, 0.0f };
+    lgw::Vector playerMoved = { 0.0f, 0.0f };
     float gravity = -9.8f;
     bool canJump = false;
 
     // green box
-    ocp::Barrier2D box(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(2.0f, 2.0f));
+    lgw::Barrier2D box(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(0.0f, 0.0f), lgw::Point(2.0f, 2.0f));
     box.setVertices(settings.camera_position_x, settings.camera_position_y);
     // additional variables
     float objectColor[4] = { 0.0f, 1.0f, 0.5f, 1.0f };
 
-    // barrier
+    // barriers
+    lgw::Barrier1D lowerBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(0.0f, 0.0f), lgw::Point(settings.window_virtual_width, 0.0f));
+    lgw::Barrier1D upperBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(0.0f, settings.window_virtual_height), lgw::Point(settings.window_virtual_width, settings.window_virtual_height));
+    lgw::Barrier1D leftBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(0.0f, 0.0f), lgw::Point(0.0f, settings.window_virtual_height));
+    lgw::Barrier1D rightBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, lgw::Point(settings.window_virtual_width, 0.0f), lgw::Point(settings.window_virtual_width, settings.window_virtual_height));
+    // additional variables
     float barrierColor[4] = { 0.75f, 0.0f, 0.0f, 1.0f };
-    ocp::Barrier1D lowerBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(settings.window_virtual_width, 0.0f));
-    ocp::Barrier1D upperBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, settings.window_virtual_height), ocp::Point(settings.window_virtual_width, settings.window_virtual_height));
-    ocp::Barrier1D leftBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(0.0f, 0.0f), ocp::Point(0.0f, settings.window_virtual_height));
-    ocp::Barrier1D rightBound(settings.window_aspect_ratio_dec, settings.inv_scale_factor, ocp::Point(settings.window_virtual_width, 0.0f), ocp::Point(settings.window_virtual_width, settings.window_virtual_height));
-    box.setVertices(settings.camera_position_x, settings.camera_position_y);
 
+    // initial window width and height
     float init_virtual_width = settings.window_virtual_width;
     float init_virtual_height = settings.window_virtual_height;
 
-    // start timers:
-    // timer that is used to update the fps counter once every second
-    tools::Stopwatch titleUpdateStopwatch;
+    // fps counter text
+    std::string fpsText = "FPS: 0 / 0";
+
+    // stores the amount of time elapsed since the beginning of the previous frame
+    double timeElapsed;
+    
+    // timers
     // timer that is reset on every frame
-    tools::Stopwatch fpsStopwatch;
+    lgw::Stopwatch frameStopwatch;
+    // timer that is used to update the fps counter once every second
+    lgw::Stopwatch fpsStopwatch;
     // counter to count the number of frames
-    tools::Counter fpsCounter;
+    lgw::Counter fpsCounter;
     
     // glfw: program loop
     while (!glfwWindowShouldClose(window))
     {
+        // reset frame stopwatch and record the amount of time elapsed since the beginning of the previous frame
+        timeElapsed = frameStopwatch.get();
+        frameStopwatch.reset();
+
         // glfw: input
         // close the window if the escape key is pressed
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
-        // enable wireframe mode when the '1' key is pressed
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // disable wireframe mode when the '2' key is pressed
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // toggle wireframe mode when the space key is pressed down
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            if (wireframe.con)
+            {
+                wireframe.con = false;
+                wireframe.toggle();
+                if (wireframe.val)
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                else
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+        }
+        else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+        {
+            wireframe.con = true;
+        }
+        // toggle fps
+        if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
+        {
+            if (showFPS.con)
+            {
+                showFPS.con = false;
+                showFPS.toggle();
+            }
+        }
+        else if (glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_RELEASE)
+        {
+            showFPS.con = true;
+        }
 
         // zooming in and out
         if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
@@ -239,32 +278,24 @@ int main(int argc, char** argv)
 
         // player movement
         if (canJump && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            playerMoved.y = 9.0f / (float)fpsStopwatch.get();
+            playerMoved.y = 7.0f / (float)timeElapsed;
         else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            playerMoved.y = -0.2f / (float)fpsStopwatch.get();
+            playerMoved.y = -0.2f / (float)timeElapsed;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            playerMoved.x = 0.2f / (float)fpsStopwatch.get();
+            playerMoved.x = 0.2f / (float)timeElapsed;
         else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            playerMoved.x = -0.2f / (float)fpsStopwatch.get();
-        
-        // gl: render
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+            playerMoved.x = -0.2f / (float)timeElapsed;
         
         // move the player
-        player.calcTimeStep((float)fpsStopwatch.get(), playerMoved.x, playerMoved.y + gravity);
-        fpsStopwatch.reset(); // reset fps timer
+        player.calcTimeStep((float)timeElapsed, playerMoved.x, playerMoved.y + gravity);
         playerMoved.x = 0.0f;
         playerMoved.y = 0.0f;
 
-        ocp::Point playerLeft(player.p1.x, player.p2.y);
-        ocp::Point playerRight(player.p2.x, player.p1.y);
+        lgw::Point playerLeft(player.p1.x, player.p2.y);
+        lgw::Point playerRight(player.p2.x, player.p1.y);
         // detect and resolve collisions
         voidMinorPosDiff(player.p1, playerLeft, settings.physics_error_margin);
-        /*
-        if (lineIntersectsLine(boxTop, box.p2, player.p1, playerLeft, intersect))
-            std::cout << "blob" << std::endl;
-        */
+
         if (player.p1.x < 0.0f)
         {
             player.p1.x = 0.0f;
@@ -296,48 +327,66 @@ int main(int argc, char** argv)
             }
         }
 
+        // gl: clear window
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // render text
+        activeFont.startRender(VAO_texture, VBO_texture, *textureShader, settings.window_width, settings.window_height);
+        if (showFPS.val)
+            activeFont.render(*textureShader, fpsText.c_str(), 10.0f, 850.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+        activeFont.stopRender();
+        
+        // gl: bind basic VAO, VBO, and EBO
+        glBindVertexArray(VAO_basic);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_basic);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_basic);
+        basicShader->use();
+        
         // gl: render barriers
         lowerBound.setVertices(settings.camera_position_x, settings.camera_position_y);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(lowerBound.vertices), lowerBound.vertices, GL_DYNAMIC_DRAW);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), barrierColor[0], barrierColor[1], barrierColor[2], barrierColor[3]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lowerBound.vertices), lowerBound.vertices);
+        glUniform4f(basicShader->uniLoc("color"), barrierColor[0], barrierColor[1], barrierColor[2], barrierColor[3]);
         glDrawArrays(GL_LINES, 0, 2);
 
         upperBound.setVertices(settings.camera_position_x, settings.camera_position_y);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(upperBound.vertices), upperBound.vertices, GL_DYNAMIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(upperBound.vertices), upperBound.vertices);
         glDrawArrays(GL_LINES, 0, 2);
 
         leftBound.setVertices(settings.camera_position_x, settings.camera_position_y);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(leftBound.vertices), leftBound.vertices, GL_DYNAMIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(leftBound.vertices), leftBound.vertices);
         glDrawArrays(GL_LINES, 0, 2);
 
         rightBound.setVertices(settings.camera_position_x, settings.camera_position_y);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(rightBound.vertices), rightBound.vertices, GL_DYNAMIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(rightBound.vertices), rightBound.vertices);
         glDrawArrays(GL_LINES, 0, 2);
         
         // gl: render the player
         player.setVertices(settings.camera_position_x, settings.camera_position_y);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(player.vertices), player.vertices, GL_DYNAMIC_DRAW);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), playerColor[0], playerColor[1], playerColor[2], playerColor[3]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(player.vertices), player.vertices);
+        glUniform4f(basicShader->uniLoc("color"), playerColor[0], playerColor[1], playerColor[2], playerColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             
         // gl: render the green box
         box.setVertices(settings.camera_position_x, settings.camera_position_y); // box position is static; no need to update vertices on every frame
-        glBufferData(GL_ARRAY_BUFFER, sizeof(box.vertices), box.vertices, GL_DYNAMIC_DRAW);
-        glUniform4f(glGetUniformLocation(shaderProgram, "color"), objectColor[0], objectColor[1], objectColor[2], objectColor[3]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(box.vertices), box.vertices);
+        glUniform4f(basicShader->uniLoc("color"), objectColor[0], objectColor[1], objectColor[2], objectColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        textureShader->use();
+        
         // glfw: swap buffers and poll IO events
         glfwSwapBuffers(window);
         glfwPollEvents();
         
         // update fps counter every second
-        if (titleUpdateStopwatch.get() >= 1.0)
+        if (fpsStopwatch.get() >= 1.0)
         {
             std::stringstream frameCount;
-            frameCount << settings.window_title << " [ FPS: " << fpsCounter.get() << " / " << settings.fps_cap << " ]";
-            glfwSetWindowTitle(window, frameCount.str().c_str());
+            frameCount << "FPS: " << fpsCounter.get() << " / " << settings.fps_cap;
+            fpsText = frameCount.str();
             fpsCounter.set(0);
-            titleUpdateStopwatch.reset();
+            fpsStopwatch.reset();
         }
         else
         {
@@ -345,20 +394,20 @@ int main(int argc, char** argv)
         }
 
         // wait until the next frame
-        while (fpsStopwatch.get() < settings.spf_cap)
+        while (frameStopwatch.get() < settings.spf_cap)
         {
             // do nothing
         }
     }
     
     // gl: de-allocate all resources once they've outlived their purpose:
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
-    glDeleteProgram(shaderProgram);
-
-    // freetype: de-allocate resources
-    FT_Done_FreeType(freetype);
+    glDeleteVertexArrays(1, &VAO_basic);
+    glDeleteBuffers(1, &VBO_basic);
+    glDeleteBuffers(1, &EBO_basic);
+    glDeleteVertexArrays(1, &VAO_texture);
+    glDeleteBuffers(1, &VBO_texture);
+    delete basicShader;
+    delete textureShader;
     
     // glfw: terminate, clearing all previously allocated GLFW resources.
     glfwTerminate();
@@ -373,69 +422,38 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-// gl: create a shader program from a vertex shader source and a fragment shader source
-bool createShaderProgram(std::string vertexShaderDir, std::string fragmentShaderDir, unsigned int& shaderProgram)
+// glfw: whenever a key is pressed this callback function executes
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    // load vertex shader
-    std::string vertexShaderBuffer = files::getFileContents(vertexShaderDir);
-    const char* vertexShaderSource = vertexShaderBuffer.c_str();
-    if (vertexShaderSource == std::string())
+    switch (key)
     {
-        std::cout << "Failed to load vertex shader" << std::endl; // vertex shader file either wasn't found or is empty
-        return 0;
+    case GLFW_KEY_W: {
+        break;
     }
-    // load fragment shader
-    std::string fragmentShaderBuffer = files::getFileContents(fragmentShaderDir);
-    const char* fragmentShaderSource = fragmentShaderBuffer.c_str();
-    if (fragmentShaderSource == std::string())
-    {
-        std::cout << "Failed to load fragment shader" << std::endl; // fragment shader file either wasn't found or is empty
-        return 0;
+    case GLFW_KEY_A: {
+        break;
     }
+    case GLFW_KEY_S: {
+        break;
+    }
+    case GLFW_KEY_D: {
+        break;
+    }
+    default: {
+        // do nothing
+        return;
+    }
+    }
+}
 
-    // compile the vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    int success;
-    char infoLog[1024];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
-        glDeleteShader(vertexShader);
-        std::cout << "Vertex shader compilation failed" << std::endl << infoLog << std::endl;
-        return 0;
-    }
-    // compile the fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 1024, NULL, infoLog);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-        std::cout << "Fragment shader compilation failed" << std::endl << infoLog << std::endl;
-        return 0;
-    }
-    // create the shader program
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-        std::cout << "Shader program linking failed" << std::endl << infoLog << std::endl;
-        return 0;
-    }
+// glfw: whenever the mouse is moved this callback function executes
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
 
-    // deallocate vertex shader and fragment shader
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return 1;
+}
+
+// glfw: whenever the mouse is clicked this callback function executes
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+
 }

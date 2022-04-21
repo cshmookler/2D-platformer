@@ -164,13 +164,29 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="external\include\glad.c" />
+    <ClCompile Include="src\lgwrap\physics\collision.cpp" />
+    <ClCompile Include="src\lgwrap\physics\object.cpp" />
+    <ClCompile Include="src\lgwrap\render\ftwrap.cpp" />
+    <ClCompile Include="src\lgwrap\render\shader.cpp" />
+    <ClCompile Include="src\lgwrap\utils\settings.cpp" />
+    <ClCompile Include="src\lgwrap\utils\tools.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\shaders\basic.fragment.glsl" />
+    <None Include="data\shaders\basic.vertex.glsl" />
+    <None Include="data\shaders\texture.fragment.glsl" />
+    <None Include="data\shaders\texture.vertex.glsl" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="src\const.h" />
-    <ClInclude Include="src\ocp.h" />
-    <ClInclude Include="src\files.h" />
-    <ClInclude Include="src\tools.h" />
+    <ClInclude Include="src\lgwrap\lgwrap.h" />
+    <ClInclude Include="src\lgwrap\physics\collision.h" />
+    <ClInclude Include="src\lgwrap\physics\object.h" />
+    <ClInclude Include="src\lgwrap\render\ftwrap.h" />
+    <ClInclude Include="src\lgwrap\render\shader.h" />
+    <ClInclude Include="src\lgwrap\utils\settings.h" />
+    <ClInclude Include="src\lgwrap\utils\tools.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

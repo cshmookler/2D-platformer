@@ -13,6 +13,33 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\shaders">
+      <UniqueIdentifier>{f3bc1b20-5edc-4698-9776-352d89af3a4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lgwrap">
+      <UniqueIdentifier>{f6cc655e-f85e-4a1d-8870-516f04086ff3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lgwrap\physics">
+      <UniqueIdentifier>{e32b78bf-fc30-4d33-a40c-bde83fe82987}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lgwrap">
+      <UniqueIdentifier>{090d1c86-48a7-4fad-9ae7-a9f8491343d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lgwrap\physics">
+      <UniqueIdentifier>{8011dc2b-24bd-4757-916e-504689319ddc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lgwrap\render">
+      <UniqueIdentifier>{9b9e3719-62a8-40af-8a68-c7424d8395c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lgwrap\render">
+      <UniqueIdentifier>{2fc01658-fd3e-454e-9a73-f17c8dc6a260}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lgwrap\utils">
+      <UniqueIdentifier>{fe007794-b49f-4992-89c5-5ec6ba0cb2c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lgwrap\utils">
+      <UniqueIdentifier>{19be7d44-428a-4cea-84a9-0471ea59ffd1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -21,16 +48,60 @@
     <ClCompile Include="external\include\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\lgwrap\physics\collision.cpp">
+      <Filter>Source Files\lgwrap\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lgwrap\physics\object.cpp">
+      <Filter>Source Files\lgwrap\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lgwrap\render\ftwrap.cpp">
+      <Filter>Source Files\lgwrap\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lgwrap\render\shader.cpp">
+      <Filter>Source Files\lgwrap\render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lgwrap\utils\settings.cpp">
+      <Filter>Source Files\lgwrap\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lgwrap\utils\tools.cpp">
+      <Filter>Source Files\lgwrap\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\tools.h">
-      <Filter>Header Files</Filter>
+    <None Include="data\shaders\basic.fragment.glsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="data\shaders\basic.vertex.glsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="data\shaders\texture.fragment.glsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="data\shaders\texture.vertex.glsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\lgwrap\physics\collision.h">
+      <Filter>Header Files\lgwrap\physics</Filter>
     </ClInclude>
-    <ClInclude Include="src\ocp.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\lgwrap\physics\object.h">
+      <Filter>Header Files\lgwrap\physics</Filter>
     </ClInclude>
-    <ClInclude Include="src\files.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\lgwrap\render\ftwrap.h">
+      <Filter>Header Files\lgwrap\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lgwrap\render\shader.h">
+      <Filter>Header Files\lgwrap\render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lgwrap\utils\settings.h">
+      <Filter>Header Files\lgwrap\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lgwrap\utils\tools.h">
+      <Filter>Header Files\lgwrap\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lgwrap\lgwrap.h">
+      <Filter>Header Files\lgwrap</Filter>
     </ClInclude>
     <ClInclude Include="src\const.h">
       <Filter>Header Files</Filter>
