@@ -332,10 +332,18 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // render text
-        activeFont.startRender(VAO_texture, VBO_texture, *textureShader, settings.window_width, settings.window_height);
         if (showFPS.val)
-            activeFont.render(*textureShader, fpsText.c_str(), 10.0f, 850.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
-        activeFont.stopRender();
+        {
+            activeFont.startRender(VAO_texture, VBO_texture, textureShader, settings.window_width, settings.window_height);
+            activeFont.render(textureShader, fpsText.c_str(), 5.0f, 870.0f, 1.0f, glm::vec3(0.0, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Move player : W A S D", 5.0f, 840.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Respawn : T", 5.0f, 810.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Move scene : I J K L", 5.0f, 780.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Change scene scale : F G", 5.0f, 750.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Reset scene : Y", 5.0f, 720.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.render(textureShader, "Toggle wireframe mode : SPACE", 5.0f, 690.0f, 1.0f, glm::vec3(0.8, 0.8f, 0.8f));
+            activeFont.stopRender();
+        }
         
         // gl: bind basic VAO, VBO, and EBO
         glBindVertexArray(VAO_basic);
@@ -373,7 +381,10 @@ int main(int argc, char** argv)
         glUniform4f(basicShader->uniLoc("color"), objectColor[0], objectColor[1], objectColor[2], objectColor[3]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        textureShader->use();
+        // gl: unbind VAO, VBO, and EBO
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         
         // glfw: swap buffers and poll IO events
         glfwSwapBuffers(window);
