@@ -1,2 +1,3 @@
 # exclude external includes from language statistics
 external/** -linguist-vendored
+src/**/*.h linguist-language=C++
