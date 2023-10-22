@@ -1,3 +1,4 @@
 # exclude external includes from language statistics
-external/** linguist-vendored
-src/**/*.h -linguist-language=C++
+# external/** linguist-vendored
+# src/**/*.h -linguist-language=C++
+src/lgwrap/lgwrap.h linguist-language=C++
